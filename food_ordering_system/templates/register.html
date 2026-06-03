@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Customer Registration</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .auth-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 400px; }
+        h2 { color: #ff4757; margin-bottom: 20px; text-align: center; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: #57606f; font-weight: 600; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 12px; background: #ff4757; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 10px; }
+        .switch-text { text-align: center; margin-top: 15px; font-size: 0.9rem; color: #747d8c; }
+        .switch-text a { color: #ff4757; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div style="position:fixed; top:16px; left:16px; z-index:9999; display:flex; gap:10px;">
+    <a href="/" style="background:#1e90ff; color:#fff; padding:10px 14px; border-radius:8px; text-decoration:none; font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,0.15);">🏠 Home</a>
+    <button onclick="if (window.history.length > 1) window.history.back(); else window.location.href='/'" style="background:#ff4757; color:#fff; border:none; padding:10px 14px; border-radius:8px; font-weight:600; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.15);">← Back</button>
+</div>
+
+<div class="auth-card">
+    <h2>Create Account</h2>
+    <form id="register-form">
+        <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="reg-username" required>
+        </div>
+        <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" id="reg-email" required>
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="reg-password" required>
+        </div>
+        <div class="form-group">
+            <label>Account Type</label>
+            <select id="reg-role">
+                <option value="customer">Customer (Order Food)</option>
+                <option value="admin">Platform Administrator</option>
+            </select>
+        </div>
+        <button type="submit" class="btn">Sign Up</button>
+    </form>
+    <div class="switch-text">Already have an account? <a href="/login/">Login here</a></div>
+</div>
+
+<script>
+    document.getElementById('register-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const payload = {
+            username: document.getElementById('reg-username').value,
+            email: document.getElementById('reg-email').value,
+            password: document.getElementById('reg-password').value,
+            role: document.getElementById('reg-role').value
+        };
+
+        fetch('/api/v1/accounts/register/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => {
+            if (res.ok) {
+                alert('Registration successful! Redirecting to login...');
+                window.location.href = '/login/';
+            } else {
+                return res.json().then(err => alert('Failed: ' + JSON.stringify(err)));
+            }
+        });
+});
+</script>
+</body>
+</html>

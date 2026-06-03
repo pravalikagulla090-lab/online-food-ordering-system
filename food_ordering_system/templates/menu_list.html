@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Menu Storefront</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .restaurant-header { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 6px solid #ff4757; margin-bottom: 30px; }
+        .restaurant-header h1 { margin: 0 0 10px 0; color: #2f3542; font-size: 2.2rem; }
+        .restaurant-header p { color: #57606f; margin: 5px 0; font-size: 1.1rem; }
+        .section-title { font-size: 1.5rem; color: #2f3542; border-bottom: 2px solid #ff4757; padding-bottom: 10px; margin-top: 40px; margin-bottom: 20px; }
+        .menu-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        .menu-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; justify-content: space-between; align-items: center; }
+        .menu-card h3 { margin: 0 0 5px 0; color: #2f3542; font-size: 1.2rem; }
+        .menu-card p { margin: 0; color: #747d8c; font-size: 0.95rem; }
+        .card-footer { display: flex; align-items: center; gap: 15px; }
+        .price { font-size: 1.2rem; font-weight: bold; color: #2f3542; }
+        .add-btn { background: #ff4757; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .nav-links { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .nav-links a { color: #ff4757; text-decoration: none; font-weight: bold; }
+        .empty-msg { color: #a4b0be; font-style: italic; text-align: center; font-size: 1.1rem; padding: 20px 0; }
+    </style>
+</head>
+<body>
+    <div style="position:fixed; top:16px; left:16px; z-index:9999; display:flex; gap:10px;">
+        <a href="/" style="background:#1e90ff; color:#fff; padding:10px 14px; border-radius:8px; text-decoration:none; font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,0.15);">🏠 Home</a>
+        <button onclick="if (window.history.length > 1) window.history.back(); else window.location.href='/'" style="background:#ff4757; color:#fff; border:none; padding:10px 14px; border-radius:8px; font-weight:600; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.15);">← Back</button>
+    </div>
+    <div class="container">
+        <div class="nav-links">
+            <a href="/restaurants/">← Back to Restaurants</a>
+            <a href="/cart/">View My Cart →</a>
+        </div>
+
+        <div id="restaurant-info" class="restaurant-header">
+            <h1>Loading Restaurant...</h1>
+            <p>Fresh food prepared daily.</p>
+        </div>
+
+        <h2 class="section-title">🍴 Menu Options</h2>
+        <div id="menu-grid" class="menu-grid">
+            <p class="empty-msg">Assembling catalog ingredients...</p>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const restaurantId = urlParams.get('id');
+
+        if (!restaurantId) {
+            document.getElementById('restaurant-info').innerHTML = '<h1>⚠️ No Restaurant Selected</h1>';
+            document.getElementById('menu-grid').innerHTML = '';
+        } else {
+            // CRITICAL FIX: Use the actual RestaurantViewSet retrieve endpoint
+            fetch(`/api/v1/restaurants/restaurants/${restaurantId}/`)
+                .then(res => {
+                    if (!res.ok) throw new Error("HTTP structural failure: " + res.status);
+                    return res.json();
+                })
+                .then(restaurant => {
+                    document.getElementById('restaurant-info').innerHTML = `
+                        <h1>${restaurant.name}</h1>
+                        <p>${restaurant.description}</p>
+                        <p style="margin-top: 12px; font-size: 0.95rem; color:#747d8c;">
+                            📍 <strong>Address:</strong> ${restaurant.address} | 📞 <strong>Call:</strong> ${restaurant.contact}
+                        </p>
+                    `;
+
+                    const menuGrid = document.getElementById('menu-grid');
+                    menuGrid.innerHTML = ''; 
+
+                    const items = restaurant.menu_items || [];
+                    if (items.length === 0) {
+                        menuGrid.innerHTML = '<p class="empty-msg">No food items available today.</p>';
+                        return;
+                    }
+
+                    items.forEach(item => {
+                        const card = document.createElement('div');
+                        card.className = 'menu-card';
+                        card.innerHTML = `
+                            <div>
+                                <h3>${item.name}</h3>
+                                <p>${item.description || 'Tasty meal preparation entry.'}</p>
+                            </div>
+                            <div class="card-footer">
+                                <span class="price">₹${parseFloat(item.price).toFixed(2)}</span>
+                                <button class="add-btn" onclick="executeBasketPost(${item.id}, '${item.name.replace(/'/g, "\\'")}')">Add to Cart</button>
+                            </div>
+                        `;
+                        menuGrid.appendChild(card);
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    document.getElementById('menu-grid').innerHTML = '<p class="empty-msg" style="color:#ff4757; font-weight: bold;">⚠️ Error fetching menu catalog maps.</p>';
+                });
+        }
+
+        function executeBasketPost(itemId, itemName) {
+            fetch('/api/v1/cart/', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ item_id: itemId, quantity: 1 })
+            })
+            .then(res => {
+                if (res.status === 401 || (res.redirected && res.url.includes('/login/'))) {
+                    window.location.href = '/login/?next=/cart/';
+                    return;
+                }
+                if (!res.ok) {
+                    alert('Could not update basket state.');
+                    return;
+                }
+                return res.json();
+            })
+            .then(data => {
+                if (data && data.status === 'success') {
+                    alert(`🛒 Item "${itemName}" successfully tracked to your food basket!`);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

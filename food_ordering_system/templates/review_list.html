@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Customer Reviews</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; padding: 40px; text-align: center; }
+        .card { background: white; padding: 20px; margin: 15px auto; max-width: 500px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: left; }
+        h1 { color: #ff4757; }
+        .stars { color: #ffa502; font-weight: bold; font-size: 1.1rem; }
+        .back { display: inline-block; margin-top: 20px; color: #ff4757; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div style="position:fixed; top:16px; left:16px; z-index:9999; display:flex; gap:10px;">
+        <a href="/" style="background:#1e90ff; color:#fff; padding:10px 14px; border-radius:8px; text-decoration:none; font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,0.15);">🏠 Home</a>
+        <button onclick="if (window.history.length > 1) window.history.back(); else window.location.href='/'" style="background:#ff4757; color:#fff; border:none; padding:10px 14px; border-radius:8px; font-weight:600; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.15);">← Back</button>
+    </div>
+    <h1>⭐ Customer Reviews Feed</h1>
+    <div id="reviews-container">
+        <p style="color: #777;">Loading customer reviews...</p>
+    </div>
+
+    <script>
+        fetch('/api/v1/reviews/')
+            .then(res => res.json())
+            .then(data => {
+                const container = document.getElementById('reviews-container');
+                container.innerHTML = '';
+                const items = data.results || data;
+                if(!items || items.length === 0) {
+                    container.innerHTML = '<p>No reviews left yet. Be the first!</p>';
+                    return;
+                }
+                items.forEach(review => {
+                    container.innerHTML += `
+                        <div class="card">
+                            <span class="stars">${'★'.repeat(review.rating)}${'☆'.repeat(5-review.rating)}</span>
+                            <h4>👤 User: ${review.reviewer || 'Anonymous'}</h4>
+                            <p>"${review.comment || 'No comment text left.'}"</p>
+                        </div>`;
+                });
+            });
+    </script>
+</body>
+</html>

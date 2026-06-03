@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partner Restaurants</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h1 { color: #ff4757; text-align: center; margin-top: 20px; font-size: 2.2rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-top: 30px; }
+        .restaurant-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; border-top: 4px solid #ff4757; }
+        .restaurant-card h2 { margin: 0 0 10px 0; color: #2f3542; }
+        .restaurant-card p { color: #57606f; font-size: 0.95rem; line-height: 1.5; margin: 5px 0; }
+        .meta-info { font-size: 0.85rem; color: #747d8c; margin-top: 15px; background: #f1f2f6; padding: 10px; border-radius: 6px; }
+        .view-btn { display: block; text-align: center; background: #ff4757; color: white; text-decoration: none; padding: 12px; border-radius: 6px; font-weight: bold; margin-top: 20px; transition: background 0.2s; }
+        .view-btn:hover { background: #e04050; }
+        .empty-msg { color: #a4b0be; font-style: italic; text-align: center; font-size: 1.1rem; grid-column: 1/-1; }
+    </style>
+</head>
+<body>
+    <div style="position:fixed; top:16px; left:16px; z-index:9999; display:flex; gap:10px;">
+        <a href="/" style="background:#1e90ff; color:#fff; padding:10px 14px; border-radius:8px; text-decoration:none; font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,0.15);">🏠 Home</a>
+        <button onclick="if (window.history.length > 1) window.history.back(); else window.location.href='/'" style="background:#ff4757; color:#fff; border:none; padding:10px 14px; border-radius:8px; font-weight:600; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.15);">← Back</button>
+    </div>
+    <div class="container">
+        <h1>🏪 Partner Restaurants</h1>
+        <div class="grid" id="restaurant-grid">
+            <p class="empty-msg">Connecting to food project catalogs...</p>
+        </div>
+    </div>
+
+    <script>
+        // Fetch directly from our clean API channel
+        fetch('/api/v1/restaurants/restaurants/')
+            .then(res => res.json())
+            .then(data => {
+                const grid = document.getElementById('restaurant-grid');
+                grid.innerHTML = ''; 
+
+                // 🌟 FIX: Handle both paginated results format and raw lists format cleanly
+                let restaurants = [];
+                if (data && data.results) {
+                    restaurants = data.results;
+                } else if (Array.isArray(data)) {
+                    restaurants = data;
+                }
+
+                if (restaurants.length === 0) {
+                    grid.innerHTML = '<p class="empty-msg">No restaurants available in the catalog right now.</p>';
+                    return;
+                }
+
+                restaurants.forEach(restaurant => {
+                    const card = document.createElement('div');
+                    card.className = 'restaurant-card';
+                    
+                    // Render the exact field variables coming from your menu/serializers.py
+                    card.innerHTML = `
+                        <div>
+                            <h2>${restaurant.name || 'Unnamed Kitchen'}</h2>
+                            <p>${restaurant.description || 'No description provided.'}</p>
+                            <p style="margin-top: 10px;">📍 <strong>Address:</strong> ${restaurant.address || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <div class="meta-info">
+                                📞 Contact: ${restaurant.contact || 'N/A'}<br>
+                                👤 Status: Active Partner
+                            </div>
+                            <a href="/restaurants/menu/?id=${restaurant.id}" class="view-btn">View Menu & Order →</a>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            })
+            .catch(err => {
+                console.error("Pipeline Error:", err);
+                document.getElementById('restaurant-grid').innerHTML = '<p class="empty-msg" style="color:#ff4757; font-weight: bold;">⚠️ Connection Error: Failed to fetch restaurant listings from backend data channels.</p>';
+            });
+    </script>
+</body>
+</html>

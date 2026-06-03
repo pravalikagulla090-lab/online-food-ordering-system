@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform Dashboard Hub</title>
+    <script>
+        const userToken = localStorage.getItem('user_token');
+        const userRole = localStorage.getItem('user_role');
+        const username = localStorage.getItem('username');
+    </script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f6f9; color: #2f3542; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .nav-header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 40px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; }
+        .logo { font-size: 1.5rem; font-weight: bold; color: #ff4757; }
+        .user-controls { display: flex; align-items: center; gap: 20px; }
+        .role-badge { background: #e4e7eb; color: #57606f; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; text-transform: uppercase; }
+        .logout-btn { color: #ff4757; text-decoration: none; font-weight: bold; cursor: pointer; }
+        .main-container { max-width: 1000px; width: 100%; padding: 40px 20px; box-sizing: border-box; text-align: center; }
+        h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .subtitle { color: #747d8c; margin-bottom: 40px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; width: 100%; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #e4e7eb; text-align: left; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .card h3 { margin-top: 0; color: #2f3542; font-size: 1.4rem; }
+        .card p { color: #747d8c; font-size: 0.95rem; line-height: 1.5; margin-bottom: 20px; }
+        .card-btn { display: inline-block; padding: 10px 20px; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 0.95rem; }
+        .customer-theme { background: #ff4757; }
+        .customer-theme:hover { background: #e04050; }
+        .admin-theme { background: #1e90ff; }
+        .admin-theme:hover { background: #0077e6; }
+        .django-theme { background: #2ed573; }
+        .django-theme:hover { background: #26af5f; }
+    </style>
+</head>
+<body>
+    <div style="position:fixed; top:16px; left:16px; z-index:9999; display:flex; gap:10px;">
+        <a href="/" style="background:#1e90ff; color:#fff; padding:10px 14px; border-radius:8px; text-decoration:none; font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,0.15);">🏠 Home</a>
+        <button onclick="if (window.history.length > 1) window.history.back(); else window.location.href='/'" style="background:#ff4757; color:#fff; border:none; padding:10px 14px; border-radius:8px; font-weight:600; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.15);">← Back</button>
+    </div>
+
+    <div class="nav-header">
+        <div class="logo">🍔 FoodEngine Hub</div>
+        <div class="user-controls">
+            <span id="welcome-message">Welcome!</span>
+            <span id="role-display" class="role-badge">Guest</span>
+            <a onclick="handleLogout()" class="logout-btn">🚪 Log Out</a>
+            <form id="logout-form" method="post" action="/logout/" style="display:none;">
+                {% csrf_token %}
+            </form>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <h1 id="greeting-title">Platform Dashboard</h1>
+        <p class="subtitle">Access application modules, manage tracking structures, and coordinate food logistics</p>
+
+        <div class="grid">
+            <div class="card customer-view" style="display: none;">
+                <h3>🍔 Browse Food Menu</h3>
+                <p>Explore a massive selection of meals cooked fresh by local partner vendors.</p>
+                <a href="/restaurants/" class="card-btn customer-theme">View Menu Items →</a>
+            </div>
+
+            <div class="card customer-view" style="display: none;">
+                <h3>🛒 My Shopping Cart</h3>
+                <p>Review items resting inside your cart and proceed straight to checkout.</p>
+                <a href="/cart/" class="card-btn customer-theme">Open Cart →</a>
+            </div>
+
+            <div class="card customer-view" style="display: none;">
+                <h3>📦 Track My Orders</h3>
+                <p>Monitor your active order preparation timelines and check updates.</p>
+                <a href="/orders/" class="card-btn customer-theme">Track Receipts →</a>
+            </div>
+
+            <div class="card customer-view" style="display: none;">
+                <h3>⭐ Customer Feedback</h3>
+                <p>Read review posts left by platform foodies or draft public feedback text.</p>
+                <a href="/reviews/" class="card-btn customer-theme">Read Reviews →</a>
+            </div>
+
+            <div class="card admin-view" style="display: none;">
+                <h3>🏪 Operations Control Terminal</h3>
+                <p>Register storefront branches, manage food categories, and execute deletions.</p>
+                <a href="/manage/" class="card-btn admin-theme">Open System Terminal →</a>
+            </div>
+
+            <div class="card admin-view" style="display: none;">
+                <h3>🚴 Delivery Dispatch Pipeline</h3>
+                <p>Monitor delivery tracking chains, driver statuses, and verify active routes.</p>
+                <a href="/delivery/" class="card-btn admin-theme">Dispatch System →</a>
+            </div>
+
+            <div class="card admin-view" style="display: none;">
+                <h3>📈 Financial Analytics</h3>
+                <p>Analyze gross profit margins, global volumes, and system metrics.</p>
+                <a href="/reports/" class="card-btn admin-theme">Open Reports →</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        if (username) {
+            document.getElementById('welcome-message').innerText = `👋 Hi, ${username}`;
+            document.getElementById('role-display').innerText = userRole;
+            document.getElementById('greeting-title').innerText = userRole === 'admin' ? '⚙️ Control Center' : '🍕 What are you craving today?';
+        }
+
+        if (userRole === 'admin') {
+            document.querySelectorAll('.admin-view').forEach(el => el.style.display = 'block');
+        } else {
+            document.querySelectorAll('.customer-view').forEach(el => el.style.display = 'block');
+        }
+
+        function handleLogout() {
+            localStorage.clear();
+            document.getElementById('logout-form').submit();
+        }
+    </script>
+</body>
+</html>

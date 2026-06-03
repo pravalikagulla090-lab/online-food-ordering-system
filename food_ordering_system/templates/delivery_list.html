@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Delivery Dispatch</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; padding: 40px; text-align: center; }
+        .card { background: white; padding: 20px; margin: 15px auto; max-width: 500px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: left; }
+        h1 { color: #ff4757; }
+        .badge { background: #2ed573; color: white; padding: 4px 8px; border-radius: 4px; float: right; font-weight: bold;}
+        .back { display: inline-block; margin-top: 20px; color: #ff4757; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div style="position:fixed; top:16px; left:16px; z-index:9999; display:flex; gap:10px;">
+        <a href="/" style="background:#1e90ff; color:#fff; padding:10px 14px; border-radius:8px; text-decoration:none; font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,0.15);">🏠 Home</a>
+        <button onclick="if (window.history.length > 1) window.history.back(); else window.location.href='/'" style="background:#ff4757; color:#fff; border:none; padding:10px 14px; border-radius:8px; font-weight:600; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.15);">← Back</button>
+    </div>
+    <h1>🚴 Live Delivery Dispatch Pipeline</h1>
+    <div id="delivery-container">
+        <p style="color: #777;">Loading dispatch channels...</p>
+    </div>
+
+    <script>
+        fetch('/api/v1/delivery/tracking/')
+            .then(res => res.json())
+            .then(data => {
+                const container = document.getElementById('delivery-container');
+                container.innerHTML = '';
+                const items = data.results || data;
+                if(!items || items.length === 0) {
+                    container.innerHTML = '<p>No delivery dispatches currently active.</p>';
+                    return;
+                }
+                items.forEach(item => {
+                    container.innerHTML += `
+                        <div class="card">
+                            <span class="badge">${item.status}</span>
+                            <h3>Delivery Node #${item.id}</h3>
+                            <p>📦 <strong>Linked Order reference:</strong> Order #${item.order}</p>
+                            <p>⏰ <strong>Est. Arrival:</strong> ${item.estimated_delivery_time || 'Calculating...'}</p>
+                        </div>`;
+                });
+            });
+    </script>
+</body>
+</html>

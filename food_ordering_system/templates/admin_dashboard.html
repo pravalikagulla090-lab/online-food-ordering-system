@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Operations Control Terminal</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; margin: 0; padding: 40px; color: #2f3542; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 3px solid #1e90ff; padding-bottom: 15px; }
+        h1 { color: #1e90ff; margin: 0; }
+        .back-btn { text-decoration: none; color: #747d8c; font-weight: bold; }
+        .management-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 20px; }
+        .section-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h2 { margin-top: 0; color: #2f3542; border-bottom: 1px solid #e4e7eb; padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; }
+        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        .submit-btn { background: #1e90ff; color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 5px; }
+        .data-list { margin-top: 20px; max-height: 250px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px; padding: 10px; background: #fafafa; }
+        .data-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: white; margin-bottom: 8px; border-radius: 4px; border: 1px solid #e4e7eb; }
+        .trash-btn { background: #ff4757; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div style="position:fixed; top:16px; left:16px; z-index:9999; display:flex; gap:10px;">
+        <a href="/" style="background:#1e90ff; color:#fff; padding:10px 14px; border-radius:8px; text-decoration:none; font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,0.15);">🏠 Home</a>
+        <button onclick="if (window.history.length > 1) window.history.back(); else window.location.href='/'" style="background:#ff4757; color:#fff; border:none; padding:10px 14px; border-radius:8px; font-weight:600; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.15);">← Back</button>
+    </div>
+
+<div class="container">
+    <div class="header">
+        <div>
+            <h1>⚙️ System Terminal Panel</h1>
+            <p style="margin: 5px 0 0 0; color:#747d8c;">Create new database entities or execute record removals</p>
+        </div>
+    </div>
+
+    <div class="management-grid">
+        <div class="section-card">
+            <h2>🏪 Manage Restaurants</h2>
+            <form id="restaurant-form">
+                <div class="form-group">
+                    <label>Restaurant Name</label>
+                    <input type="text" id="res-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Operating Address</label>
+                    <input type="text" id="res-address" required>
+                </div>
+                <div class="form-group">
+                    <label>Contact Phone</label>
+                    <input type="text" id="res-contact" required>
+                </div>
+                <button type="submit" class="submit-btn">➕ Save New Restaurant</button>
+            </form>
+            <div class="data-list" id="restaurant-list-container">Loading...</div>
+        </div>
+
+        <div class="section-card">
+            <h2>🗂️ Manage Menu Categories</h2>
+            <form id="category-form">
+                <div class="form-group">
+                    <label>Category Title</label>
+                    <input type="text" id="cat-name" required>
+                </div>
+                <button type="submit" class="submit-btn">➕ Save New Category</button>
+            </form>
+            <div class="data-list" id="category-list-container">Loading...</div>
+        </div>
+    </div>
+
+    <div class="management-grid" style="grid-template-columns: 1fr; margin-top: 40px;">
+        <div class="section-card">
+            <h2>🍔 Global Food Menu Item Stocker</h2>
+            <form id="menu-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div>
+                    <div class="form-group">
+                        <label>Target Restaurant</label>
+                        <select id="menu-res-select" required><option value="">Select Target Branch</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Food Category Link</label>
+                        <select id="menu-cat-select" required><option value="">Select Structural Category</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Dish Name</label>
+                        <input type="text" id="menu-name" required>
+                    </div>
+                </div>
+                <div>
+                    <div class="form-group">
+                        <label>Price (INR)</label>
+                        <input type="number" step="0.01" id="menu-price" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Recipe Ingredients / Description</label>
+                        <textarea id="menu-desc" rows="4"></textarea>
+                    </div>
+                    <button type="submit" class="submit-btn" style="padding: 12px;">➕ Stock Food Item into Menu</button>
+                </div>
+            </form>
+            <div class="data-list" id="menu-items-list-container" style="max-height: 350px; margin-top: 25px;">Select a branch to manage specific dishes...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const token = localStorage.getItem('user_token');
+
+    function refreshAllData() {
+        loadRestaurants();
+        loadCategories();
+    }
+
+    function loadRestaurants() {
+        fetch('/api/v1/restaurants/list/', { headers: { 'Authorization': 'Bearer ' + token } })
+        .then(res => res.json())
+        .then(data => {
+            const container = document.getElementById('restaurant-list-container');
+            const selectDropdown = document.getElementById('menu-res-select');
+            container.innerHTML = '';
+            selectDropdown.innerHTML = '<option value="">Select Target Branch</option>';
+            
+            const list = data.results || data;
+            list.forEach(res => {
+                container.innerHTML += `
+                    <div class="data-row">
+                        <div>
+                            <h4>${res.name}</h4>
+                            <p>📍 ${res.address}</p>
+                        </div>
+                        <button class="trash-btn" onclick="deleteItem('/api/v1/restaurants/list/${res.id}/', 'Restaurant')">🗑️</button>
+                    </div>`;
+                selectDropdown.innerHTML += `<option value="${res.id}">${res.name}</option>`;
+            });
+        });
+    }
+
+    function loadCategories() {
+        fetch('/api/v1/restaurants/categories/', { headers: { 'Authorization': 'Bearer ' + token } })
+        .then(res => res.json())
+        .then(data => {
+            const container = document.getElementById('category-list-container');
+            const selectDropdown = document.getElementById('menu-cat-select');
+            container.innerHTML = '';
+            selectDropdown.innerHTML = '<option value="">Select Structural Category</option>';
+            
+            const list = data.results || data;
+            list.forEach(cat => {
+                container.innerHTML += `
+                    <div class="data-row">
+                        <h4>${cat.name}</h4>
+                        <button class="trash-btn" onclick="deleteItem('/api/v1/restaurants/categories/${cat.id}/', 'Category')">🗑️</button>
+                    </div>`;
+                selectDropdown.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+            });
+        });
+    }
+
+    document.getElementById('menu-res-select').addEventListener('change', function() {
+        const resId = this.value;
+        const container = document.getElementById('menu-items-list-container');
+        if(!resId) { container.innerHTML = 'Select restaurant branch.'; return; }
+        
+        fetch(`/api/v1/restaurants/items/?restaurant=${resId}`)
+        .then(res => res.json())
+        .then(data => {
+            container.innerHTML = '';
+            const items = data.results || data;
+            if(items.length === 0) { container.innerHTML = '<p>No items found.</p>'; return; }
+            items.forEach(item => {
+                container.innerHTML += `
+                    <div class="data-row">
+                        <div>
+                            <h4>${item.name}</h4>
+                            <p>Price: <strong>₹${item.price}</strong></p>
+                        </div>
+                        <button class="trash-btn" onclick="deleteItem('/api/v1/restaurants/items/${item.id}/', 'Menu Item')">🗑️</button>
+                    </div>`;
+            });
+        });
+    });
+
+    document.getElementById('restaurant-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const payload = { restaurant_name: document.getElementById('res-name').value, address: document.getElementById('res-address').value, contact: document.getElementById('res-contact').value };
+        fetch('/api/v1/restaurants/list/', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify(payload) })
+        .then(() => { alert('Success!'); refreshAllData(); });
+    });
+
+    document.getElementById('category-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const payload = { category_name: document.getElementById('cat-name').value };
+        fetch('/api/v1/restaurants/categories/', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify(payload) })
+        .then(() => { alert('Success!'); refreshAllData(); });
+    });
+
+    document.getElementById('menu-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const payload = {
+            restaurant: document.getElementById('menu-res-select').value,
+            category: document.getElementById('menu-cat-select').value,
+            food_name: document.getElementById('menu-name').value,
+            price: document.getElementById('menu-price').value,
+            description: document.getElementById('menu-desc').value
+        };
+        fetch('/api/v1/restaurants/items/', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify(payload) })
+        .then(() => { alert('Success!'); document.getElementById('menu-res-select').dispatchEvent(new Event('change')); });
+    });
+
+    function deleteItem(url, typeName) {
+        if(confirm(`Permanently delete this ${typeName}?`)) {
+            fetch(url, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } })
+            .then(() => { alert('Deleted.'); refreshAllData(); });
+        }
+    }
+
+    refreshAllData();
+</script>
+</body>
+</html>

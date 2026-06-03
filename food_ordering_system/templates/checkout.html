@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Review & Confirm Order</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg-bright: #f8f9fa; --card-white: #ffffff; --text-dark: #2d3748; --text-muted: #718096; --confirm-green: #2ecc71; --cancel-red: #e74c3c; --accent-orange: #ff9f43; --border-light: #e2e8f0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+        body { background-color: var(--bg-bright); color: var(--text-dark); padding: 40px 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { font-size: 2.2rem; color: var(--text-dark); font-weight: 700; }
+        .checkout-card { background: var(--card-white); border-radius: 16px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05); border: 1px solid var(--border-light); padding: 30px; }
+        .section-title { font-size: 1.3rem; font-weight: 600; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--bg-bright); display: flex; justify-content: space-between; align-items: center; }
+        .cart-item-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px dashed var(--border-light); }
+        .item-details h3 { font-size: 1.05rem; font-weight: 600; }
+        .item-price { font-weight: 700; font-size: 1.1rem; }
+        .summary-box { background-color: var(--bg-bright); border-radius: 12px; padding: 20px; margin-top: 25px; }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 10px; color: var(--text-muted); }
+        .summary-row.total { margin-top: 15px; padding-top: 15px; border-top: 2px solid var(--border-light); font-size: 1.4rem; font-weight: 700; color: var(--text-dark); }
+        .button-group { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; }
+        .btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-size: 1.05rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-confirm { background-color: var(--confirm-green); color: white; }
+        .btn-cancel { background-color: var(--cancel-red); color: white; }
+    </style>
+</head>
+<body>
+    <div style="position:fixed; top:16px; left:16px; z-index:9999; display:flex; gap:10px;">
+        <a href="/" style="background:#1e90ff; color:#fff; padding:10px 14px; border-radius:8px; text-decoration:none; font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,0.15);">🏠 Home</a>
+        <button onclick="if (window.history.length > 1) window.history.back(); else window.location.href='/'" style="background:#ff4757; color:#fff; border:none; padding:10px 14px; border-radius:8px; font-weight:600; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.15);">← Back</button>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Review Your Order</h1>
+            <p style="text-align: left;"><a href="/cart/" style="color:var(--text-muted); text-decoration:none;">← Return Basket</a></p>
+        </div>
+
+        <div class="checkout-card">
+            <div class="section-title">
+                <span>🛒 Basket Validation</span>
+                <span style="background:var(--accent-orange); color:white; padding:4px 10px; border-radius:20px; font-size:0.8rem;">💵 COD</span>
+            </div>
+
+            <div class="cart-items-list">
+                {% for item in cart_items %}
+                    <div class="cart-item-row">
+                        <div class="item-details">
+                            <h3>{{ item.menu_item.food_name }}</h3>
+                            <p>Quantity: {{ item.quantity }} × ₹{{ item.menu_item.price }}</p>
+                        </div>
+                        <div class="item-price">₹{{ item.total_price }}</div>
+                    </div>
+                {% empty %}
+                    <div style="text-align: center; padding: 30px 0; color: var(--text-muted);">Your cart is empty.</div>
+                {% endfor %}
+            </div>
+
+            <div class="summary-box">
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span>₹{{ subtotal }}</span>
+                </div>
+                <div class="summary-row.total">
+                    <span>Grand Total</span>
+                    <span>₹{{ subtotal }}</span>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <form action="{% url 'confirm_order' %}" method="POST">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-confirm">✅ Confirm Order</button>
+                </form>
+
+                <form action="{% url 'cancel_order' %}" method="POST">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-cancel">❌ Cancel Order</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

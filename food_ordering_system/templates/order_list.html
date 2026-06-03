@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Track My Orders</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; padding: 40px; margin:0; display:flex; flex-direction:column; align-items:center; }
+        .container { max-width: 700px; width: 100%; }
+        .order-card { background: white; padding: 25px; border-radius: 8px; margin-bottom: 20px; box-shadow:0 4px 10px rgba(0,0,0,0.05); }
+        .status-bar { background: #e4e7eb; border-radius: 4px; padding: 10px; font-weight: bold; text-align: center; color: white; text-transform: uppercase; margin-top: 10px; }
+        .status-preparing { background: #f1c40f; }
+        .status-transit { background: #3498db; }
+        .status-delivered { background: #2ed573; }
+        .status-cancelled { background: #ff4757; }
+        .order-actions { margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn-cancel-order { background: #ff4757; color: white; border: none; padding: 10px 14px; border-radius: 8px; cursor: pointer; font-weight: 700; }
+    </style>
+</head>
+<body>
+    <div style="position:fixed; top:16px; left:16px; z-index:9999; display:flex; gap:10px;">
+        <a href="/" style="background:#1e90ff; color:#fff; padding:10px 14px; border-radius:8px; text-decoration:none; font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,0.15);">🏠 Home</a>
+        <button onclick="if (window.history.length > 1) window.history.back(); else window.location.href='/'" style="background:#ff4757; color:#fff; border:none; padding:10px 14px; border-radius:8px; font-weight:600; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.15);">← Back</button>
+    </div>
+<div class="container">
+    <h1 style="color:#ff4757;">📦 Your Order History</h1>
+    <div id="orders-container">Loading track files...</div>
+</div>
+
+<script>
+    const token = localStorage.getItem('user_token');
+    const ordersContainer = document.getElementById('orders-container');
+
+    function fetchOrders() {
+        fetch('/api/v1/orders/orders/', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(res => res.json())
+        .then(data => {
+            ordersContainer.innerHTML = '';
+            const orders = data.results || data;
+
+            if(!orders || orders.length === 0) {
+                ordersContainer.innerHTML = '<p>No orders placed yet.</p>';
+                return;
+            }
+
+            orders.forEach(order => {
+                let statusClass = 'status-preparing';
+                if (order.status === 'Out for Delivery') statusClass = 'status-transit';
+                if (order.status === 'DELIVERED' || order.status === 'Completed') statusClass = 'status-delivered';
+                if (order.status === 'Cancelled') statusClass = 'status-cancelled';
+
+                const canCancel = ['Pending', 'Preparing'].includes(order.status);
+                const cancelButton = canCancel ? `<div class="order-actions"><button class="btn-cancel-order" onclick="cancelOrder(${order.id})">❌ Cancel Order</button></div>` : '';
+
+                ordersContainer.innerHTML += `
+                    <div class="order-card">
+                        <h3>Receipt Reference: #${order.id}</h3>
+                        <p>📅 Ordered on: ${new Date(order.created_at).toLocaleDateString()}</p>
+                        <p>💰 Total Amount: <strong>₹${order.total_amount}</strong></p>
+                        <div class="status-bar ${statusClass}">Current State: ${order.status}</div>
+                        ${cancelButton}
+                    </div>`;
+            });
+        })
+        .catch(() => {
+            ordersContainer.innerHTML = '<p style="color:#ff4757;">Unable to load orders. Please refresh the page.</p>';
+        });
+    }
+
+    function cancelOrder(orderId) {
+        if (!confirm('Are you sure you want to cancel this order?')) {
+            return;
+        }
+
+        fetch(`/api/v1/orders/cancel/${orderId}/`, {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            },
+        })
+        .then(res => res.json().then(data => ({ status: res.status, body: data })))
+        .then(({ status, body }) => {
+            if (status === 200) {
+                alert('Order cancelled successfully.');
+                fetchOrders();
+            } else {
+                alert(body.detail || 'Unable to cancel this order.');
+            }
+        })
+        .catch(() => {
+            alert('Network error. Please try again.');
+        });
+    }
+
+    fetchOrders();
+</script>
+</body>
+</html>
